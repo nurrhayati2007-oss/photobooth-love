@@ -9,24 +9,38 @@ body {
   margin: 0;
   text-align: center;
   font-family: Arial;
-  background: linear-gradient(to bottom, #ffd6e0, #ffffff);
+  background: linear-gradient(135deg, #ffd6e0, #ffc2d1);
 }
 
 video {
   width: 300px;
   border-radius: 20px;
   margin-top: 20px;
+  transform: scaleX(-1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 button {
   margin-top: 20px;
-  padding: 10px;
+  padding: 10px 20px;
   border-radius: 20px;
-  background: pink;
-  border: none;
+  background: #ff8fab;
   color: white;
+  border: none;
+  cursor: pointer;
+}
+
+canvas {
+  margin-top: 20px;
+  border-radius: 20px;
+}
+
+#countdown {
+  font-size: 40px;
+  color: #ff4d6d;
 }
 </style>
+
 </head>
 
 <body>
@@ -35,24 +49,80 @@ button {
 
 <video id="video" autoplay></video>
 <br>
-<button onclick="takePhoto()">Take Photo 📸</button>
+<button onclick="startCapture()">Start 📸</button>
+
+<p id="countdown"></p>
 
 <canvas id="canvas"></canvas>
+<a id="downloadBtn" style="display:none;" download="photobooth.png">Download 💾</a>
 
 <script>
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
+const countdownText = document.getElementById("countdown");
+const downloadBtn = document.getElementById("downloadBtn");
 
 navigator.mediaDevices.getUserMedia({ video: true })
 .then(stream => {
   video.srcObject = stream;
 });
 
-function takePhoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  context.drawImage(video, 0, 0);
+let photos = [];
+
+function startCapture() {
+  photos = [];
+  takePhotoSequence(0);
+}
+
+function takePhotoSequence(i) {
+  if (i >= 4) {
+    createStrip();
+    return;
+  }
+
+  let count = 3;
+  countdownText.innerHTML = count;
+
+  let interval = setInterval(() => {
+    count--;
+    countdownText.innerHTML = count;
+
+    if (count === 0) {
+      clearInterval(interval);
+
+      let tempCanvas = document.createElement("canvas");
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      let tempCtx = tempCanvas.getContext("2d");
+
+      tempCtx.translate(tempCanvas.width, 0);
+      tempCtx.scale(-1, 1);
+      tempCtx.drawImage(video, 0, 0);
+
+      photos.push(tempCanvas);
+
+      setTimeout(() => {
+        takePhotoSequence(i + 1);
+      }, 500);
+    }
+  }, 1000);
+}
+
+function createStrip() {
+  let width = photos[0].width;
+  let height = photos[0].height;
+
+  canvas.width = width;
+  canvas.height = height * 4;
+
+  for (let i = 0; i < 4; i++) {
+    context.drawImage(photos[i], 0, i * height);
+  }
+
+  let link = canvas.toDataURL("image/png");
+  downloadBtn.href = link;
+  downloadBtn.style.display = "block";
 }
 </script>
 
