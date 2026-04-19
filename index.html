@@ -38,6 +38,7 @@ canvas {
 #countdown {
   font-size: 40px;
   color: #ff4d6d;
+  font-weight: bold;
 }
 </style>
 
@@ -63,10 +64,16 @@ const context = canvas.getContext("2d");
 const countdownText = document.getElementById("countdown");
 const downloadBtn = document.getElementById("downloadBtn");
 
+// kamera
 navigator.mediaDevices.getUserMedia({ video: true })
 .then(stream => {
   video.srcObject = stream;
 });
+
+// tanggal otomatis
+let today = new Date();
+let options = { year: 'numeric', month: 'long', day: 'numeric' };
+let formattedDate = today.toLocaleDateString("en-US", options);
 
 let photos = [];
 
@@ -86,11 +93,15 @@ function takePhotoSequence(i) {
 
   let interval = setInterval(() => {
     count--;
-    countdownText.innerHTML = count;
 
-    if (count === 0) {
+    if (count > 0) {
+      countdownText.innerHTML = count;
+    } else if (count === 0) {
+      countdownText.innerHTML = "📸";
+    } else if (count === -1) {
       clearInterval(interval);
 
+      // ambil foto
       let tempCanvas = document.createElement("canvas");
       tempCanvas.width = video.videoWidth;
       tempCanvas.height = video.videoHeight;
@@ -102,10 +113,14 @@ function takePhotoSequence(i) {
 
       photos.push(tempCanvas);
 
+      // change poses
+      countdownText.innerHTML = "Change poses 💕";
+
       setTimeout(() => {
         takePhotoSequence(i + 1);
-      }, 500);
+      }, 1200);
     }
+
   }, 1000);
 }
 
@@ -114,11 +129,17 @@ function createStrip() {
   let height = photos[0].height;
 
   canvas.width = width;
-  canvas.height = height * 4;
+  canvas.height = height * 4 + 80;
 
   for (let i = 0; i < 4; i++) {
     context.drawImage(photos[i], 0, i * height);
   }
+
+  // tambah tanggal di bawah
+  context.fillStyle = "#333";
+  context.font = "30px Arial";
+  context.textAlign = "center";
+  context.fillText(formattedDate, width / 2, canvas.height - 20);
 
   let link = canvas.toDataURL("image/png");
   downloadBtn.href = link;
