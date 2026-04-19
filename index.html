@@ -64,24 +64,30 @@ const context = canvas.getContext("2d");
 const countdownText = document.getElementById("countdown");
 const downloadBtn = document.getElementById("downloadBtn");
 
-// kamera
+// CAMERA
 navigator.mediaDevices.getUserMedia({ video: true })
 .then(stream => {
   video.srcObject = stream;
 });
 
-// tanggal otomatis
+// DATE AUTO
 let today = new Date();
 let options = { year: 'numeric', month: 'long', day: 'numeric' };
 let formattedDate = today.toLocaleDateString("en-US", options);
 
+// LOAD FRAME
+let frameImg = new Image();
+frameImg.src = "frame.png"; // tinggal upload file ini
+
 let photos = [];
 
+// START
 function startCapture() {
   photos = [];
   takePhotoSequence(0);
 }
 
+// SEQUENCE FOTO
 function takePhotoSequence(i) {
   if (i >= 4) {
     createStrip();
@@ -98,7 +104,7 @@ function takePhotoSequence(i) {
       countdownText.innerHTML = count;
     } else if (count === 0) {
       countdownText.innerHTML = "📸";
-    } else if (count === -1) {
+    } else {
       clearInterval(interval);
 
       // ambil foto
@@ -113,7 +119,7 @@ function takePhotoSequence(i) {
 
       photos.push(tempCanvas);
 
-      // change poses
+      // CHANGE POSES
       countdownText.innerHTML = "Change poses 💕";
 
       setTimeout(() => {
@@ -124,26 +130,41 @@ function takePhotoSequence(i) {
   }, 1000);
 }
 
+// BUAT STRIP + FRAME
 function createStrip() {
   let width = photos[0].width;
   let height = photos[0].height;
 
   canvas.width = width;
-  canvas.height = height * 4 + 80;
+  canvas.height = height * 4;
 
+  // gambar foto
   for (let i = 0; i < 4; i++) {
     context.drawImage(photos[i], 0, i * height);
   }
 
-  // tambah tanggal di bawah
-  context.fillStyle = "#333";
-  context.font = "30px Arial";
-  context.textAlign = "center";
-  context.fillText(formattedDate, width / 2, canvas.height - 20);
+  // gambar frame (kalau ada)
+  if (frameImg.complete) {
+    context.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+    finish();
+  } else {
+    frameImg.onload = () => {
+      context.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+      finish();
+    };
+  }
 
-  let link = canvas.toDataURL("image/png");
-  downloadBtn.href = link;
-  downloadBtn.style.display = "block";
+  function finish() {
+    // tanggal
+    context.fillStyle = "#333";
+    context.font = "30px Arial";
+    context.textAlign = "center";
+    context.fillText(formattedDate, canvas.width / 2, canvas.height - 20);
+
+    let link = canvas.toDataURL("image/png");
+    downloadBtn.href = link;
+    downloadBtn.style.display = "block";
+  }
 }
 </script>
 
